@@ -1,7 +1,9 @@
 package com.jeff_media.armorequipevent;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -21,6 +23,7 @@ import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import static org.bukkit.event.EventPriority.MONITOR;
 
@@ -30,15 +33,22 @@ import static org.bukkit.event.EventPriority.MONITOR;
  */
 class ArmorListener implements Listener{
 
-	private final List<Material> blockedMaterials;
+	public static final boolean OFFHAND_SUPPORT = Enums.exists(ClickType.class, "SWAP_OFFHAND");
+	public static final boolean CARVED_PUMPKIN_SUPPORT = Enums.exists(Material.class, "CARVED_PUMPKIN");
+
+	private final Set<Material> blockedMaterials;
 
 	public ArmorListener(List<String> blockedMaterialNames){
 		this.blockedMaterials = blockedMaterialNames.stream()
 				.map(Material::getMaterial)
 				.filter(Objects::nonNull)
-				.collect(Collectors.toList());
+				.collect(Collectors.toCollection(() -> EnumSet.noneOf(Material.class)));
 	}
 	//Event Priority is highest because other plugins might cancel the events before we check.
+
+	public static Material carvedPumpkin() {
+		return OFFHAND_SUPPORT ? Material.CARVED_PUMPKIN : Material.PUMPKIN;
+	}
 
 	@EventHandler(priority =  EventPriority.HIGHEST, ignoreCancelled = true)
 	public final void onClick(final InventoryClickEvent event){
@@ -50,7 +60,7 @@ class ArmorListener implements Listener{
 		if(event.getClick().equals(ClickType.NUMBER_KEY)){
 			numberkey = true;
 		}
-		if(event.getClick() == ClickType.SWAP_OFFHAND) {
+		if(OFFHAND_SUPPORT && event.getClick() == ClickType.SWAP_OFFHAND) {
 			numberkey = true;
 		}
 		if(event.getSlotType() != SlotType.ARMOR && event.getSlotType() != SlotType.QUICKBAR && event.getSlotType() != SlotType.CONTAINER) return;
@@ -65,10 +75,7 @@ class ArmorListener implements Listener{
 		if(shift){
 			newArmorType = ArmorType.matchType(event.getCurrentItem());
 			if(newArmorType != null){
-				boolean equipping = true;
-				if(event.getRawSlot() == newArmorType.getSlot()){
-					equipping = false;
-				}
+				boolean equipping = event.getRawSlot() != newArmorType.getSlot();
 				if(newArmorType.equals(ArmorType.HELMET) && (equipping ? isEmpty(event.getWhoClicked().getInventory().getHelmet()) : !isEmpty(event.getWhoClicked().getInventory().getHelmet())) || newArmorType.equals(ArmorType.CHESTPLATE) && (equipping ? isEmpty(event.getWhoClicked().getInventory().getChestplate()) : !isEmpty(event.getWhoClicked().getInventory().getChestplate())) || newArmorType.equals(ArmorType.LEGGINGS) && (equipping ? isEmpty(event.getWhoClicked().getInventory().getLeggings()) : !isEmpty(event.getWhoClicked().getInventory().getLeggings())) || newArmorType.equals(ArmorType.BOOTS) && (equipping ? isEmpty(event.getWhoClicked().getInventory().getBoots()) : !isEmpty(event.getWhoClicked().getInventory().getBoots()))){
 					ArmorEquipEvent armorEquipEvent = new ArmorEquipEvent((Player) event.getWhoClicked(), ArmorEquipEvent.EquipMethod.SHIFT_CLICK, newArmorType, equipping ? null : event.getCurrentItem(), equipping ? event.getCurrentItem() : null);
 					Bukkit.getServer().getPluginManager().callEvent(armorEquipEvent);
@@ -137,7 +144,7 @@ class ArmorListener implements Listener{
 			}
 			ArmorType newArmorType = ArmorType.matchType(event.getItem());
 			// Carved pumpkins cannot be equipped using right-click
-			if(event.getItem() != null && event.getItem().getType() == Material.CARVED_PUMPKIN) return;
+			if(event.getItem() != null && event.getItem().getType() == carvedPumpkin()) return;
 
 			if(newArmorType != null){
 				if(newArmorType.equals(ArmorType.HELMET) && isEmpty(event.getPlayer().getInventory().getHelmet()) || newArmorType.equals(ArmorType.CHESTPLATE) && isEmpty(event.getPlayer().getInventory().getChestplate()) || newArmorType.equals(ArmorType.LEGGINGS) && isEmpty(event.getPlayer().getInventory().getLeggings()) || newArmorType.equals(ArmorType.BOOTS) && isEmpty(event.getPlayer().getInventory().getBoots())){

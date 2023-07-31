@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,7 +57,7 @@ public final class ArmorEquipEvent extends PlayerEvent implements Cancellable {
 		} catch (IOException ignored2) {
 			//e.printStackTrace();
 		}
-		return new ArrayList<>();
+		return Collections.emptyList();
 	}
 
 	/**
