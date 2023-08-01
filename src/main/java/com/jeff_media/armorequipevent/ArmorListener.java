@@ -47,7 +47,7 @@ class ArmorListener implements Listener{
 	//Event Priority is highest because other plugins might cancel the events before we check.
 
 	public static Material carvedPumpkin() {
-		return OFFHAND_SUPPORT ? Material.CARVED_PUMPKIN : Material.PUMPKIN;
+		return CARVED_PUMPKIN_SUPPORT ? Material.CARVED_PUMPKIN : Material.PUMPKIN;
 	}
 
 	@EventHandler(priority =  EventPriority.HIGHEST, ignoreCancelled = true)
@@ -160,7 +160,7 @@ class ArmorListener implements Listener{
 	}
 
 	static boolean isEmpty(ItemStack item) {
-		return (item == null || item.getType().isAir() || item.getAmount() == 0);
+		return (item == null || item.getType() == Material.AIR || item.getAmount() == 0);
 	}
 
 //	@EventHandler(priority =  EventPriority.HIGHEST, ignoreCancelled = true)
